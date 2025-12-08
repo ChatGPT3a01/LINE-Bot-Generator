@@ -1,4 +1,4 @@
-# CH8｜LINE Bot 智慧客服生成器
+# LINE Bot 智慧客服生成器
 
 > 一個簡單易用的本地端網頁工具，讓你輕鬆客製化 LINE Bot 的 Google Apps Script 程式碼
 
