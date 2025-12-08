@@ -40,5 +40,14 @@ config.ini
 # 書籍內容（禁止上傳）
 book/
 
+# 不上傳到 GitHub
+netlify/
+teach/
+截圖/
+*.md
+!README.md
+*.txt
+check_environment.*
+
 # 壓縮檔
 netlify-deploy.zip
