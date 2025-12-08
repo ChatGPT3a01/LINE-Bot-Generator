@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINE Bot GAS 生成器</title>
+    <link rel="stylesheet" href="static/css/style.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 LINE Bot GAS 程式碼生成器</h1>
+            <p class="subtitle">輕鬆客製化您的 LINE Bot - 支援 Gemini 與 OpenAI 雙 AI 服務</p>
+        </header>
+
+        <!-- 下載原版 GAS 檔案按鈕 -->
+        <div style="padding: 20px 30px; background: #FFF3CD; border-bottom: 2px solid #FFC107; text-align: center;">
+            <p style="margin-bottom: 10px; font-size: 1.1em; color: #856404;">
+                <strong>📥 不想自訂參數？</strong> 可以直接下載基礎版本的 GAS 檔案！
+            </p>
+            <button id="download-original-btn"
+                    style="display: inline-block; padding: 12px 30px; background: #FFC107; color: #000;
+                           text-decoration: none; border-radius: 8px; font-weight: 600; transition: all 0.3s ease;
+                           box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3); border: none; cursor: pointer; font-size: 1em;"
+                    onmouseover="this.style.background='#FFB300'; this.style.transform='translateY(-2px)';"
+                    onmouseout="this.style.background='#FFC107'; this.style.transform='translateY(0)';">
+                📥 下載原版 GAS 檔案（sample.gs）
+            </button>
+            <p style="margin-top: 10px; font-size: 0.9em; color: #856404;">
+                下載後，只需填入您的 API Keys 即可使用！
+            </p>
+        </div>
+
+        <form id="configForm">
+            <!-- 第一部分：系統基本設定 -->
+            <section class="form-section">
+                <h2>📋 系統基本設定</h2>
+
+                <div class="form-group">
+                    <label for="channel_access_token">LINE Channel Access Token *</label>
+                    <input type="text" id="channel_access_token" name="channel_access_token" required
+                           placeholder="在 LINE Developers 取得">
+                    <small>從 LINE Developers Console 的 Messaging API 頁面取得</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="spreadsheet_id">Google 試算表 ID *</label>
+                    <input type="text" id="spreadsheet_id" name="spreadsheet_id" required
+                           placeholder="例如：1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+                    <small>從試算表網址中複製 ID（/d/ 和 /edit 之間的部分）</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="sheet_name">知識庫工作表名稱 *</label>
+                    <input type="text" id="sheet_name" name="sheet_name" value="工作表1" required>
+                    <small>試算表中存放知識庫的工作表名稱</small>
+                </div>
+            </section>
+
+            <!-- 第二部分：AI 服務選擇 -->
+            <section class="form-section">
+                <h2>🧠 AI 服務設定</h2>
+
+                <div class="form-group">
+                    <label>選擇 AI 服務 *</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="ai_service" value="gemini" checked>
+                            <span>Google Gemini</span>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="ai_service" value="openai">
+                            <span>OpenAI GPT</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Gemini 設定區 -->
+                <div id="gemini-config" class="ai-config-section">
+                    <div class="form-group">
+                        <label for="gemini_api_key">Gemini API Key *</label>
+                        <input type="password" id="gemini_api_key" name="gemini_api_key"
+                               placeholder="從 Google AI Studio 取得">
+                        <small>前往 <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a> 取得 API Key</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gemini_model">Gemini 模型 *</label>
+                        <select id="gemini_model" name="gemini_model">
+                            <option value="gemini-2.5-flash">Gemini 2.5 Flash（快速、經濟）</option>
+                            <option value="gemini-2.5-pro">Gemini 2.5 Pro（進階、強大）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- OpenAI 設定區 -->
+                <div id="openai-config" class="ai-config-section" style="display: none;">
+                    <div class="form-group">
+                        <label for="openai_api_key">OpenAI API Key *</label>
+                        <input type="password" id="openai_api_key" name="openai_api_key"
+                               placeholder="從 OpenAI 平台取得">
+                        <small>前往 <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a> 取得 API Key</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="openai_model">OpenAI 模型 *</label>
+                        <select id="openai_model" name="openai_model">
+                            <option value="gpt-4o">GPT-4.0（標準版）</option>
+                            <option value="gpt-4.1">GPT-4.1（進階版）</option>
+                            <option value="gpt-5">GPT-5.0（最新版）</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 第三部分：AI 回應風格 -->
+            <section class="form-section">
+                <h2>💬 AI 回應風格設定</h2>
+
+                <div class="form-group">
+                    <label for="ai_tone">語氣風格</label>
+                    <select id="ai_tone" name="ai_tone">
+                        <option value="友善、自然">友善、自然</option>
+                        <option value="專業、學術">專業、學術</option>
+                        <option value="輕鬆、幽默">輕鬆、幽默</option>
+                        <option value="簡短、扼要">簡短、扼要</option>
+                        <option value="熱情、鼓勵">熱情、鼓勵</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="ai_role">角色定位</label>
+                    <input type="text" id="ai_role" name="ai_role" value="AI 助理"
+                           placeholder="例如：專業客服、學習助教、生活顧問">
+                    <small>定義 AI 的角色身份，讓回答更有個性</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="language">回答語言</label>
+                    <select id="language" name="language">
+                        <option value="繁體中文">繁體中文</option>
+                        <option value="簡體中文">簡體中文</option>
+                        <option value="English">English</option>
+                        <option value="日本語">日本語</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="response_format">回答格式</label>
+                    <select id="response_format" name="response_format">
+                        <option value="自然段落">自然段落</option>
+                        <option value="條列式">條列式</option>
+                        <option value="Markdown">Markdown 格式</option>
+                        <option value="簡短扼要">簡短扼要（100字內）</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- 第四部分：知識庫設定 -->
+            <section class="form-section">
+                <h2>📚 知識庫設定</h2>
+
+                <div class="form-group">
+                    <label for="kb_priority">知識庫優先級</label>
+                    <select id="kb_priority" name="kb_priority">
+                        <option value="high">高（優先使用知識庫）</option>
+                        <option value="strict">嚴格（只使用知識庫）</option>
+                        <option value="balanced">平衡（知識庫+AI知識）</option>
+                    </select>
+                    <small>決定 AI 如何使用知識庫資訊</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="no_data_message">知識庫無資料時的提示文字</label>
+                    <input type="text" id="no_data_message" name="no_data_message"
+                           value="目前知識庫無相關資料，不過..."
+                           placeholder="自訂找不到資料時的開頭語">
+                </div>
+            </section>
+
+            <!-- 第五部分：進階參數 -->
+            <section class="form-section">
+                <h2>⚙️ 進階參數調整</h2>
+
+                <div class="form-group">
+                    <label for="temperature">Temperature（創意度）：<span id="temp-value">0.3</span></label>
+                    <input type="range" id="temperature" name="temperature"
+                           min="0" max="1" step="0.1" value="0.3">
+                    <small>0 = 保守穩定，1 = 創意多樣</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="max_tokens">最大回應長度（Max Tokens）</label>
+                    <select id="max_tokens" name="max_tokens">
+                        <option value="1024">1024（短）</option>
+                        <option value="2048" selected>2048（中等）</option>
+                        <option value="4096">4096（長）</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- 提交按鈕 -->
+            <div class="form-actions">
+                <button type="submit" class="btn-primary">🚀 生成 GAS 程式碼</button>
+            </div>
+        </form>
+
+        <!-- 生成結果區域 -->
+        <div id="result-section" class="result-section" style="display: none;">
+            <h2>✅ 生成成功！</h2>
+            <p>請複製下方程式碼，貼到 Google Apps Script 編輯器中：</p>
+
+            <div class="code-container">
+                <textarea id="generated-code" readonly></textarea>
+            </div>
+
+            <div class="result-actions">
+                <button id="copy-btn" class="btn-secondary">📋 複製程式碼</button>
+                <button id="download-btn" class="btn-secondary">💾 下載 GS 檔案</button>
+                <button id="reset-btn" class="btn-outline">🔄 重新設定</button>
+            </div>
+
+            <div class="deployment-guide">
+                <h3>📝 部署步驟：</h3>
+                <ol>
+                    <li>前往 <a href="https://script.google.com" target="_blank">Google Apps Script</a></li>
+                    <li>建立新專案，貼上上方生成的程式碼</li>
+                    <li>點選「部署」→「新增部署作業」</li>
+                    <li>選擇類型：「網路應用程式」</li>
+                    <li>執行身分：「我」</li>
+                    <li>具有存取權的使用者：「所有人」</li>
+                    <li>複製網路應用程式網址，貼到 LINE Developers 的 Webhook URL</li>
+                    <li>開啟 LINE Bot 的「Use webhooks」</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- 載入動畫 -->
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>正在生成程式碼...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2025 LINE Bot GAS Generator | 作者：曾慶良 阿亮老師</p>
+        <div style="margin-top: 15px; display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+            <a href="https://www.facebook.com/iddmail" target="_blank" style="color: #1877F2; text-decoration: none; font-weight: 600;">
+                <i class="fab fa-facebook" style="margin-right: 5px;"></i>阿亮老師 FB
+            </a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" style="color: #FF0000; text-decoration: none; font-weight: 600;">
+                <i class="fab fa-youtube" style="margin-right: 5px;"></i>阿亮老師 YouTube
+            </a>
+            <a href="https://www.facebook.com/groups/2754139931432955" target="_blank" style="color: #06C755; text-decoration: none; font-weight: 600;">
+                <i class="fab fa-facebook" style="margin-right: 5px;"></i>3A科技實驗室
+            </a>
+        </div>
+    </footer>
+
+    <script src="static/js/script.js"></script>
+</body>
+</html>

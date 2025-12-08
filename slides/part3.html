@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CH8 Part 3 - 基本設定與 AI 服務選擇</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; overflow: hidden; color: #333; }
+        .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.2); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.25); color: white; width: 60px; height: 60px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); font-size: 24px; cursor: pointer; z-index: 9000; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
+        .nav-arrow:hover { background: rgba(255,255,255,0.5); transform: translateY(-50%) scale(1.1); }
+        .prev-arrow { left: 30px; } .next-arrow { right: 30px; }
+        .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .slide-container { width: 100%; height: 100vh; padding-top: 60px; position: relative; z-index: 1; }
+        .slide { position: absolute; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px); display: none; align-items: center; justify-content: center; padding: 40px; opacity: 0; transition: opacity 0.4s ease; z-index: 10; }
+        .slide.active { display: flex; opacity: 1; z-index: 20; }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); padding: 60px; max-width: 1400px; width: 95%; max-height: 88vh; overflow-y: auto; position: relative; }
+        h1 { color: #1e3c72; font-size: 56px; margin-bottom: 24px; text-align: center; }
+        h2 { color: #2a5298; font-size: 38px; margin-bottom: 35px; border-bottom: 3px solid #1e3c72; padding-bottom: 12px; }
+        h3 { color: #1e3c72; font-size: 26px; margin: 30px 0 15px 0; }
+        p, li { font-size: 20px; line-height: 1.8; color: #444; margin-bottom: 15px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; font-weight: 600; font-size: 0.95em; }
+        pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; overflow-x: auto; margin: 25px 0; font-size: 18px; line-height: 1.6; font-family: monospace; }
+        .box { padding: 25px; border-radius: 12px; margin: 25px 0; border-left: 6px solid; font-size: 20px; }
+        .info { background: #e3f2fd; border-color: #2196f3; color: #0d47a1; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .highlight { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #004d40; }
+        .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px; }
+        .concept-card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s; }
+        .concept-card:hover { transform: translateY(-8px); border-color: #4facfe; }
+        .indicators { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 4000; padding: 10px 25px; background: rgba(0,0,0,0.3); border-radius: 30px; backdrop-filter: blur(5px); }
+        .dot { width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #4facfe; transform: scale(1.3); }
+        .footer-text { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #666; font-size: 14px; }
+        img.slide-img { max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin: 20px auto; display: block; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #e9ecef; }
+        th { background: #f8f9fa; color: #1e3c72; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <div class="nav-title">CH8 Part 3 - 基本設定與 AI 服務選擇</div>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn">🏠 統整頁</a>
+            <a href="part2.html" class="nav-btn">← Part 2</a>
+            <a href="part4.html" class="nav-btn">Part 4 →</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        </div>
+    </div>
+
+    <div class="slide-container">
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active">
+            <div class="content-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h4 style="color: #4facfe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Chapter 8 LINE Bot Generator</h4>
+                <h1>Part 3: 基本設定與 AI 服務選擇</h1>
+                <h2 style="border: none; font-weight: normal; font-size: 28px; color: #666; max-width: 800px;">
+                    設定 LINE Token、試算表 ID，選擇 Gemini 或 OpenAI
+                </h2>
+                <div style="margin-top: 40px; display: flex; gap: 20px;">
+                    <span class="highlight">LINE Token</span>
+                    <span class="highlight">Google Sheets</span>
+                    <span class="highlight">AI API Key</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 三大必填欄位 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📝 系統基本設定：三大必填欄位</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>1️⃣ LINE Channel Access Token</h3>
+                        <p>Bot 的「身份證」，讓程式能代表你的 Bot 發送訊息。</p>
+                        <p><strong>取得方式：</strong>LINE Developers Console</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>2️⃣ Google 試算表 ID</h3>
+                        <p>知識庫的位置，存放問答資料的試算表 ID。</p>
+                        <p><strong>取得方式：</strong>試算表網址中 /d/ 和 /edit 之間</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>3️⃣ AI API Key</h3>
+                        <p>AI 服務的鑰匙，讓程式能呼叫 Gemini 或 OpenAI。</p>
+                        <p><strong>取得方式：</strong>Google AI Studio 或 OpenAI Platform</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 取得 LINE Token -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔑 取得 LINE Channel Access Token</h2>
+                <ol style="margin-left: 40px;">
+                    <li>前往 <a href="https://developers.line.biz/" target="_blank">LINE Developers Console</a></li>
+                    <li>選擇你的 Provider（或建立新的）</li>
+                    <li>建立或選擇一個 Messaging API Channel</li>
+                    <li>進入「Messaging API」頁籤</li>
+                    <li>找到「Channel access token」區塊</li>
+                    <li>點擊「Issue」按鈕產生權杖</li>
+                    <li>複製這串長長的英數字串</li>
+                </ol>
+                <div class="box warning">
+                    <strong>注意：</strong>Token 是機密資訊，請勿公開分享！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 建立知識庫試算表 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📊 建立知識庫試算表</h2>
+                <p>在 Google Sheets 建立一個新試算表，格式如下：</p>
+                <table>
+                    <tr>
+                        <th>問題</th>
+                        <th>答案</th>
+                    </tr>
+                    <tr>
+                        <td>營業時間是？</td>
+                        <td>我們的營業時間是週一至週五 9:00-18:00，週末休息。</td>
+                    </tr>
+                    <tr>
+                        <td>如何聯絡客服？</td>
+                        <td>您可以撥打客服專線 02-1234-5678，或寄信到 service@example.com。</td>
+                    </tr>
+                    <tr>
+                        <td>有提供外送服務嗎？</td>
+                        <td>是的，我們提供外送服務，滿 500 元免運費。</td>
+                    </tr>
+                </table>
+                <img src="images/ch8_03_knowledge_base.png" alt="知識庫範例" class="slide-img" style="max-height: 250px;">
+            </div>
+        </div>
+
+        <!-- Slide 5: 取得試算表 ID -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔗 取得 Google 試算表 ID</h2>
+                <p>從試算表的網址中找到 ID：</p>
+                <pre style="font-size: 16px;">https://docs.google.com/spreadsheets/d/<span style="color: #ff6b6b; font-weight: bold;">1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms</span>/edit</pre>
+                <p style="text-align: center; font-size: 24px;">↓</p>
+                <p style="text-align: center;"><code style="font-size: 18px;">1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms</code></p>
+                <div class="box info">
+                    <strong>位置：</strong>介於 <code>/d/</code> 和 <code>/edit</code> 之間的那一長串文字就是 ID！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 選擇 AI 服務 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🧠 選擇 AI 服務</h2>
+                <p>本工具支援兩種 AI 服務，你可以根據需求選擇：</p>
+                <div class="concept-grid">
+                    <div class="concept-card" style="border-top: 4px solid #4285f4;">
+                        <h3 style="color: #4285f4;">Google Gemini（推薦）</h3>
+                        <ul>
+                            <li>繁體中文理解能力出色</li>
+                            <li>API 費用經濟實惠</li>
+                            <li>提供免費使用額度</li>
+                            <li>申請流程簡單</li>
+                        </ul>
+                        <p style="margin-top: 15px;"><a href="https://aistudio.google.com/apikey" target="_blank">申請 Gemini API Key →</a></p>
+                    </div>
+                    <div class="concept-card" style="border-top: 4px solid #10a37f;">
+                        <h3 style="color: #10a37f;">OpenAI GPT</h3>
+                        <ul>
+                            <li>邏輯推理能力強</li>
+                            <li>創意生成出色</li>
+                            <li>英文對話表現佳</li>
+                            <li>技術文件生成優秀</li>
+                        </ul>
+                        <p style="margin-top: 15px;"><a href="https://platform.openai.com/api-keys" target="_blank">申請 OpenAI API Key →</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: Gemini 模型選擇 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔷 Gemini 模型選擇</h2>
+                <table>
+                    <tr>
+                        <th>模型</th>
+                        <th>特色</th>
+                        <th>適用場景</th>
+                    </tr>
+                    <tr>
+                        <td><strong>Gemini 2.5 Flash</strong></td>
+                        <td>快速、經濟</td>
+                        <td>一般客服對話、快問快答</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gemini 2.5 Pro</strong></td>
+                        <td>理解力強、推理佳</td>
+                        <td>複雜問答、專業諮詢</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gemini 3.0 Flash</strong></td>
+                        <td>新一代快速模型</td>
+                        <td>高效能需求</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gemini 3.0 Pro</strong></td>
+                        <td>新一代專業模型</td>
+                        <td>進階應用</td>
+                    </tr>
+                </table>
+                <div class="box success">
+                    <strong>建議：</strong>初次使用選擇 <code>Gemini 2.5 Flash</code>，效能與成本最平衡！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: OpenAI 模型選擇 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🟢 OpenAI 模型選擇</h2>
+                <table>
+                    <tr>
+                        <th>模型</th>
+                        <th>特色</th>
+                        <th>適用場景</th>
+                    </tr>
+                    <tr>
+                        <td><strong>GPT-4o</strong></td>
+                        <td>標準版，平衡效能</td>
+                        <td>一般對話、客服</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPT-4.1</strong></td>
+                        <td>進階理解力</td>
+                        <td>專業諮詢、技術支援</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPT-4-turbo</strong></td>
+                        <td>高速版本</td>
+                        <td>需要快速回應</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GPT-5.1</strong></td>
+                        <td>最新最強</td>
+                        <td>高階應用</td>
+                    </tr>
+                </table>
+                <div class="box warning">
+                    <strong>注意：</strong>OpenAI API 需要先儲值才能使用。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 取得 Gemini API Key -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔐 取得 Gemini API Key</h2>
+                <ol style="margin-left: 40px;">
+                    <li>前往 <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></li>
+                    <li>使用 Google 帳號登入</li>
+                    <li>點擊「Create API Key」按鈕</li>
+                    <li>選擇一個 Google Cloud 專案（或建立新專案）</li>
+                    <li>幾秒鐘後 API Key 就會產生</li>
+                    <li>複製這個 Key 貼到表單中</li>
+                </ol>
+                <div class="box info">
+                    <strong>免費額度：</strong>Gemini 提供每月一定量的免費使用，對初學者很友善！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: 總結 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📋 Part 3 總結</h2>
+                <div class="box success">
+                    <h3>本單元學會的設定：</h3>
+                    <ul style="margin-left: 20px; margin-top: 15px;">
+                        <li>✅ LINE Channel Access Token 取得與填寫</li>
+                        <li>✅ Google 試算表建立與 ID 取得</li>
+                        <li>✅ 知識庫格式（問題、答案兩欄）</li>
+                        <li>✅ AI 服務選擇（Gemini vs OpenAI）</li>
+                        <li>✅ AI 模型差異與選擇建議</li>
+                        <li>✅ API Key 申請流程</li>
+                    </ul>
+                </div>
+                <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 20px;">
+                    <a href="part2.html" class="nav-btn" style="background: #6c757d; padding: 15px 40px; font-size: 18px;">← Part 2</a>
+                    <a href="part4.html" class="nav-btn" style="background: #28a745; padding: 15px 40px; font-size: 18px;">前往 Part 4：AI 回應風格設定 →</a>
+                </div>
+                <p class="footer-text">© 2026 自己架設 AI - 零基礎到大師 | Made with 曾慶良(阿亮老師) ❤️</p>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="nav-arrow prev-arrow" id="prevBtn" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" id="nextBtn" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicatorContainer"></div>
+
+    <script>
+        let currentSlide = 0; const slides = document.querySelectorAll('.slide'); const totalSlides = slides.length;
+        function init() { createIndicators(); showSlide(0); updateButtons(); document.addEventListener('keydown', handleKeydown); }
+        function handleKeydown(e) { if (e.key === 'ArrowLeft') changeSlide(-1); if (e.key === 'ArrowRight') changeSlide(1); }
+        function createIndicators() { const container = document.getElementById('indicatorContainer'); container.innerHTML = ''; slides.forEach((_, index) => { const dot = document.createElement('div'); dot.className = 'dot'; dot.onclick = () => goToSlide(index); container.appendChild(dot); }); }
+        function showSlide(index) { if (index < 0) index = 0; if (index >= totalSlides) index = totalSlides - 1; slides.forEach(slide => slide.classList.remove('active')); slides[index].classList.add('active'); currentSlide = index; const dots = document.querySelectorAll('.dot'); dots.forEach((dot, idx) => { dot.classList.toggle('active', idx === index); }); updateButtons(); }
+        function changeSlide(direction) { showSlide(currentSlide + direction); } function goToSlide(index) { showSlide(index); }
+        function updateButtons() { document.getElementById('prevBtn').disabled = currentSlide === 0; document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1; }
+        function toggleFullscreen() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { if (document.exitFullscreen) { document.exitFullscreen(); } } }
+        init();
+    </script>
+</body>
+</html>

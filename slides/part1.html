@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CH8 Part 1 - LINE Bot 簡介與應用情境</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        .nav-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            z-index: 10000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .nav-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .nav-buttons { display: flex; gap: 12px; }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-arrow {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.25);
+            color: white;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.4);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 9000;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-arrow:hover {
+            background: rgba(255,255,255,0.5);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .prev-arrow { left: 30px; }
+        .next-arrow { right: 30px; }
+        .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .slide-container {
+            width: 100%;
+            height: 100vh;
+            padding-top: 60px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .slide {
+            position: absolute;
+            top: 60px; left: 0;
+            width: 100%;
+            height: calc(100vh - 60px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 10;
+        }
+
+        .slide.active {
+            display: flex;
+            opacity: 1;
+            z-index: 20;
+        }
+
+        .content-card {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            padding: 60px;
+            max-width: 1400px;
+            width: 95%;
+            max-height: 88vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        h1 { color: #1e3c72; font-size: 56px; margin-bottom: 24px; text-align: center; }
+        h2 { color: #2a5298; font-size: 38px; margin-bottom: 35px; border-bottom: 3px solid #1e3c72; padding-bottom: 12px; }
+        h3 { color: #1e3c72; font-size: 26px; margin: 30px 0 15px 0; }
+        p, li { font-size: 20px; line-height: 1.8; color: #444; margin-bottom: 15px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; font-weight: 600; font-size: 0.95em; }
+        pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; overflow-x: auto; margin: 25px 0; font-size: 18px; line-height: 1.6; font-family: monospace; }
+        .box { padding: 25px; border-radius: 12px; margin: 25px 0; border-left: 6px solid; font-size: 20px; }
+        .info { background: #e3f2fd; border-color: #2196f3; color: #0d47a1; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .highlight { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #004d40; }
+
+        .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px; }
+        .concept-card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s; }
+        .concept-card:hover { transform: translateY(-8px); border-color: #4facfe; }
+
+        .indicators { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 4000; padding: 10px 25px; background: rgba(0,0,0,0.3); border-radius: 30px; backdrop-filter: blur(5px); }
+        .dot { width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #4facfe; transform: scale(1.3); }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+            color: #666;
+            font-size: 14px;
+        }
+
+        img.slide-img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            margin: 20px auto;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <div class="nav-title">CH8 Part 1 - LINE Bot 簡介與應用情境</div>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn">🏠 統整頁</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+            <a href="https://www.facebook.com/iddmail" target="_blank" class="nav-btn">📘 FB</a>
+            <a href="https://www.youtube.com/@Liang-yt02" target="_blank" class="nav-btn">🎥 YT</a>
+        </div>
+    </div>
+
+    <div class="slide-container">
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active">
+            <div class="content-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h4 style="color: #4facfe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Chapter 8 LINE Bot Generator</h4>
+                <h1>Part 1: LINE Bot 簡介與應用情境</h1>
+                <h2 style="border: none; font-weight: normal; font-size: 28px; color: #666; max-width: 800px;">
+                    從零開始認識 LINE Bot 的價值與無限可能
+                </h2>
+                <div style="margin-top: 40px; display: flex; gap: 20px;">
+                    <span class="highlight">LINE Messaging API</span>
+                    <span class="highlight">智慧客服</span>
+                    <span class="highlight">自動化回覆</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 學習目標 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🎯 本單元學習目標</h2>
+                <p>完成本單元後，你將能夠：</p>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>1. 理解 LINE Bot</h3>
+                        <p>認識 LINE Bot 的運作原理與應用價值</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>2. 了解本工具</h3>
+                        <p>掌握「LINE Bot 智慧客服生成器」的設計理念與優勢</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>3. 探索應用場景</h3>
+                        <p>認識 LINE Bot 在教育、商業、社群的多元應用</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>4. 建立信心</h3>
+                        <p>了解「無需程式背景」也能打造專屬 Bot</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 什麼是 LINE Bot -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🤖 什麼是 LINE Bot？</h2>
+                <p>LINE Bot 是在 LINE 平台上自動運作的聊天機器人程式，可以：</p>
+                <ul style="margin-left: 40px;">
+                    <li><strong>自動回覆訊息</strong>：24 小時不間斷服務</li>
+                    <li><strong>處理固定流程</strong>：如預約、報名、查詢</li>
+                    <li><strong>整合 AI 能力</strong>：提供智慧對話體驗</li>
+                    <li><strong>連接外部服務</strong>：串接資料庫、試算表、API</li>
+                </ul>
+                <div class="box info">
+                    <strong>LINE Bot vs 真人客服：</strong><br>
+                    LINE Bot 能處理 80% 的重複性問題，讓真人客服專注於複雜案例，大幅提升效率！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 傳統開發的困境 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>😰 傳統 LINE Bot 開發的困境</h2>
+                <p>想自己開發 LINE Bot？你需要：</p>
+                <div class="concept-grid">
+                    <div class="concept-card" style="border-left: 4px solid #dc3545;">
+                        <h3>後端程式設計</h3>
+                        <p>學習 Python、Node.js 或其他程式語言</p>
+                    </div>
+                    <div class="concept-card" style="border-left: 4px solid #dc3545;">
+                        <h3>API 串接知識</h3>
+                        <p>理解 Webhook、JSON、HTTP 請求</p>
+                    </div>
+                    <div class="concept-card" style="border-left: 4px solid #dc3545;">
+                        <h3>雲端部署經驗</h3>
+                        <p>租用主機、設定 SSL、管理伺服器</p>
+                    </div>
+                    <div class="concept-card" style="border-left: 4px solid #dc3545;">
+                        <h3>AI Prompt 撰寫</h3>
+                        <p>設計有效的提示詞讓 AI 正確回應</p>
+                    </div>
+                </div>
+                <div class="box warning">
+                    對於非技術背景的使用者來說，這些門檻往往讓人望而卻步...
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5: 我們的解決方案 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>✨ 我們的解決方案</h2>
+                <h3 style="text-align: center; font-size: 32px; color: #28a745;">LINE Bot 智慧客服生成器</h3>
+                <p style="text-align: center; font-size: 22px; margin: 20px 0;">一個運行在本地端的視覺化工具，讓你：</p>
+                <div class="concept-grid">
+                    <div class="concept-card" style="border-left: 4px solid #28a745;">
+                        <h3>🖱️ 填寫表單即可</h3>
+                        <p>不需要寫任何程式碼，只要填表單選選項</p>
+                    </div>
+                    <div class="concept-card" style="border-left: 4px solid #28a745;">
+                        <h3>⚡ 5 分鐘完成</h3>
+                        <p>從設定到部署，前後只需 5 分鐘</p>
+                    </div>
+                    <div class="concept-card" style="border-left: 4px solid #28a745;">
+                        <h3>🔒 本地端執行</h3>
+                        <p>所有資料在你電腦上處理，安全有保障</p>
+                    </div>
+                    <div class="concept-card" style="border-left: 4px solid #28a745;">
+                        <h3>🎨 高度客製化</h3>
+                        <p>語氣風格、角色定位、知識庫優先級全都可調</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 雙 AI 引擎支援 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🧠 雙 AI 引擎支援</h2>
+                <p>本工具支援兩大 AI 服務，讓你自由選擇：</p>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3 style="color: #4285f4;">Google Gemini</h3>
+                        <ul>
+                            <li>繁體中文理解能力出色</li>
+                            <li>API 費用經濟實惠</li>
+                            <li>提供免費使用額度</li>
+                            <li>申請流程簡單</li>
+                        </ul>
+                        <p style="margin-top: 15px;"><strong>推薦模型：</strong>Gemini 2.5 Flash / Pro</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3 style="color: #10a37f;">OpenAI GPT</h3>
+                        <ul>
+                            <li>邏輯推理能力強</li>
+                            <li>創意生成出色</li>
+                            <li>英文對話表現佳</li>
+                            <li>技術文件生成優秀</li>
+                        </ul>
+                        <p style="margin-top: 15px;"><strong>推薦模型：</strong>GPT-4o / GPT-4.1</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 應用情境 - 教育 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🎓 應用情境：教育領域</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>校園智慧答疑助手</h3>
+                        <p>「選課系統怎麼登入？」「註冊組在哪裡？」這些重複問題佔據大量行政人力。</p>
+                        <p style="color: #28a745; font-weight: bold;">→ 建立 24 小時校園助手</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>課後輔導機器人</h3>
+                        <p>將數學公式、文法規則、歷史事件整理成知識庫，學生寫作業時可隨時查詢。</p>
+                        <p style="color: #28a745; font-weight: bold;">→ 培養獨立思考能力</p>
+                    </div>
+                </div>
+                <div class="box success">
+                    <strong>效益：</strong>減輕老師負擔、提升學習效率、24 小時服務不間斷
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 8: 應用情境 - 商業 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>💼 應用情境：商業領域</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>企業客服自動化</h3>
+                        <p>產品規格、退換貨政策、運送方式等資訊建檔，AI 自動回答 80% 常見問題。</p>
+                        <p style="color: #28a745; font-weight: bold;">→ 節省人力成本、提升客戶滿意度</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>內部知識管理系統</h3>
+                        <p>報帳表格、請假簽核、會議室預約...這些內部流程資訊整合到 Bot 中。</p>
+                        <p style="color: #28a745; font-weight: bold;">→ 新進員工快速上手</p>
+                    </div>
+                </div>
+                <div class="box info">
+                    <strong>關鍵優勢：</strong>中小企業也能擁有專業客服系統！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: 應用情境 - 社群 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>👥 應用情境：社群與公益</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>社團活動諮詢機器人</h3>
+                        <p>「報名費多少？」「活動地點在哪？」「需要帶什麼東西？」</p>
+                        <p style="color: #28a745; font-weight: bold;">→ 減少訊息轟炸、提升活動體驗</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>志工服務媒合平台</h3>
+                        <p>說明各項服務專案的需求、時間、地點，有興趣的民眾可先透過 Bot 了解詳情。</p>
+                        <p style="color: #28a745; font-weight: bold;">→ 提升媒合效率</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: 本工具的設計哲學 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>💡 設計哲學</h2>
+                <p>這個生成器的設計理念可以用三個關鍵字概括：</p>
+                <div class="concept-grid">
+                    <div class="concept-card" style="text-align: center;">
+                        <h3 style="font-size: 36px; color: #1e3c72;">簡單</h3>
+                        <p>隱藏技術複雜度，只需填寫表單</p>
+                        <p style="color: #666;">不需要理解 Webhook、JSON、API 認證</p>
+                    </div>
+                    <div class="concept-card" style="text-align: center;">
+                        <h3 style="font-size: 36px; color: #2a5298;">靈活</h3>
+                        <p>提供足夠的客製化選項</p>
+                        <p style="color: #666;">AI 服務、語氣風格、知識庫優先級都可調整</p>
+                    </div>
+                    <div class="concept-card" style="text-align: center;">
+                        <h3 style="font-size: 36px; color: #4facfe;">透明</h3>
+                        <p>生成的程式碼完全開放</p>
+                        <p style="color: #666;">你可以看到每一行程式在做什麼</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 11: 總結 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📋 Part 1 總結</h2>
+                <div class="box success">
+                    <h3>本單元重點回顧：</h3>
+                    <ul style="margin-left: 20px; margin-top: 15px;">
+                        <li>LINE Bot 是 24 小時自動回覆的聊天機器人</li>
+                        <li>傳統開發門檻高：程式設計、API 串接、雲端部署</li>
+                        <li>「LINE Bot 智慧客服生成器」讓你免寫程式也能建立 Bot</li>
+                        <li>支援 Gemini 和 OpenAI 雙 AI 引擎</li>
+                        <li>應用範圍廣泛：教育、商業、社群、公益</li>
+                    </ul>
+                </div>
+                <div style="text-align: center; margin-top: 40px;">
+                    <a href="part2.html" class="nav-btn" style="background: #28a745; padding: 15px 40px; font-size: 18px;">
+                        前往 Part 2：系統需求與環境建置 →
+                    </a>
+                </div>
+                <p class="footer-text">© 2026 自己架設 AI - 零基礎到大師 | Made with 曾慶良(阿亮老師) ❤️</p>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="nav-arrow prev-arrow" id="prevBtn" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" id="nextBtn" onclick="changeSlide(1)">❯</button>
+
+    <div class="indicators" id="indicatorContainer"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+
+        function init() {
+            createIndicators();
+            showSlide(0);
+            updateButtons();
+            document.addEventListener('keydown', handleKeydown);
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+        }
+
+        function createIndicators() {
+            const container = document.getElementById('indicatorContainer');
+            container.innerHTML = '';
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                dot.onclick = () => goToSlide(index);
+                container.appendChild(dot);
+            });
+        }
+
+        function showSlide(index) {
+            if (index < 0) index = 0;
+            if (index >= totalSlides) index = totalSlides - 1;
+
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[index].classList.add('active');
+            currentSlide = index;
+
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === index);
+            });
+
+            updateButtons();
+        }
+
+        function changeSlide(direction) {
+            showSlide(currentSlide + direction);
+        }
+
+        function goToSlide(index) {
+            showSlide(index);
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>

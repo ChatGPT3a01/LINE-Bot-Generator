@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虛擬環境
+venv/
+env/
+ENV/
+.venv/
+
+# Flask
+instance/
+.webassets-cache
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+nul
+
+# 日誌
+*.log
+
+# 敏感資料
+config.ini
+.env
+*.env
+
+# 書籍內容（禁止上傳）
+book/
+
+# 壓縮檔
+netlify-deploy.zip

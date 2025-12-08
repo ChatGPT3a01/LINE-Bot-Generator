@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CH8 Part 2 - 系統需求與環境建置</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; overflow: hidden; color: #333; }
+        .nav-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.2); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .nav-title { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .nav-buttons { display: flex; gap: 12px; }
+        .nav-btn { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.4); color: white; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 600; text-decoration: none; transition: all 0.3s ease; display: flex; align-items: center; gap: 6px; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.4); transform: translateY(-2px); }
+        .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.25); color: white; width: 60px; height: 60px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.4); font-size: 24px; cursor: pointer; z-index: 9000; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
+        .nav-arrow:hover { background: rgba(255,255,255,0.5); transform: translateY(-50%) scale(1.1); }
+        .prev-arrow { left: 30px; }
+        .next-arrow { right: 30px; }
+        .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
+        .slide-container { width: 100%; height: 100vh; padding-top: 60px; position: relative; z-index: 1; }
+        .slide { position: absolute; top: 60px; left: 0; width: 100%; height: calc(100vh - 60px); display: none; align-items: center; justify-content: center; padding: 40px; opacity: 0; transition: opacity 0.4s ease; z-index: 10; }
+        .slide.active { display: flex; opacity: 1; z-index: 20; }
+        .content-card { background: rgba(255, 255, 255, 0.98); border-radius: 24px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); padding: 60px; max-width: 1400px; width: 95%; max-height: 88vh; overflow-y: auto; position: relative; }
+        h1 { color: #1e3c72; font-size: 56px; margin-bottom: 24px; text-align: center; }
+        h2 { color: #2a5298; font-size: 38px; margin-bottom: 35px; border-bottom: 3px solid #1e3c72; padding-bottom: 12px; }
+        h3 { color: #1e3c72; font-size: 26px; margin: 30px 0 15px 0; }
+        p, li { font-size: 20px; line-height: 1.8; color: #444; margin-bottom: 15px; }
+        code { background: #f0f2f5; padding: 3px 8px; border-radius: 6px; font-family: monospace; color: #d63384; font-weight: 600; font-size: 0.95em; }
+        pre { background: #282c34; color: #abb2bf; padding: 25px; border-radius: 12px; overflow-x: auto; margin: 25px 0; font-size: 18px; line-height: 1.6; font-family: monospace; }
+        .box { padding: 25px; border-radius: 12px; margin: 25px 0; border-left: 6px solid; font-size: 20px; }
+        .info { background: #e3f2fd; border-color: #2196f3; color: #0d47a1; }
+        .warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .highlight { background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%); padding: 2px 6px; border-radius: 4px; font-weight: bold; color: #004d40; }
+        .concept-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px; }
+        .concept-card { background: #f8f9fa; padding: 25px; border-radius: 15px; border: 1px solid #e9ecef; transition: transform 0.3s; }
+        .concept-card:hover { transform: translateY(-8px); border-color: #4facfe; }
+        .indicators { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; z-index: 4000; padding: 10px 25px; background: rgba(0,0,0,0.3); border-radius: 30px; backdrop-filter: blur(5px); }
+        .dot { width: 12px; height: 12px; background: rgba(255,255,255,0.4); border-radius: 50%; cursor: pointer; }
+        .dot.active { background: #4facfe; transform: scale(1.3); }
+        .footer-text { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #e9ecef; color: #666; font-size: 14px; }
+        img.slide-img { max-width: 100%; max-height: 350px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); margin: 20px auto; display: block; }
+        .step-number { display: inline-block; width: 40px; height: 40px; background: #1e3c72; color: white; border-radius: 50%; text-align: center; line-height: 40px; font-weight: bold; margin-right: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="nav-bar">
+        <div class="nav-title">CH8 Part 2 - 系統需求與環境建置</div>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-btn">🏠 統整頁</a>
+            <a href="part1.html" class="nav-btn">← Part 1</a>
+            <a href="part3.html" class="nav-btn">Part 3 →</a>
+            <button class="nav-btn" onclick="toggleFullscreen()">🖥️ 全螢幕</button>
+        </div>
+    </div>
+
+    <div class="slide-container">
+
+        <!-- Slide 1: 封面 -->
+        <div class="slide active">
+            <div class="content-card" style="text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h4 style="color: #4facfe; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px;">Chapter 8 LINE Bot Generator</h4>
+                <h1>Part 2: 系統需求與環境建置</h1>
+                <h2 style="border: none; font-weight: normal; font-size: 28px; color: #666; max-width: 800px;">
+                    安裝 Python、Flask，啟動本地端生成器
+                </h2>
+                <div style="margin-top: 40px; display: flex; gap: 20px;">
+                    <span class="highlight">Python 3.7+</span>
+                    <span class="highlight">Flask</span>
+                    <span class="highlight">虛擬環境</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 2: 系統需求 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📋 系統需求</h2>
+                <p>在開始之前，請確保你的電腦已具備：</p>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>🐍 Python 3.7+</h3>
+                        <p>本專案使用 Python 撰寫，需要 3.7 或更高版本。</p>
+                        <p><a href="https://www.python.org/downloads/" target="_blank">下載 Python</a></p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>📦 pip</h3>
+                        <p>Python 套件管理工具，通常隨 Python 一起安裝。</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>🌐 瀏覽器</h3>
+                        <p>Chrome、Edge、Firefox 等現代瀏覽器皆可。</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>📁 專案檔案</h3>
+                        <p>從 GitHub 下載本專案的完整檔案。</p>
+                    </div>
+                </div>
+                <div class="box info">
+                    <strong>提示：</strong>不確定是否已安裝 Python？在命令列輸入 <code>python --version</code> 檢查！
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3: 下載專案 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📥 步驟一：下載專案</h2>
+                <h3>方法 A：使用 Git Clone（推薦）</h3>
+                <pre>git clone https://github.com/ChatGPT3a01/CH8-LINE-Bot-Generator.git
+cd CH8-LINE-Bot-Generator</pre>
+
+                <h3>方法 B：下載 ZIP 檔案</h3>
+                <ol style="margin-left: 40px;">
+                    <li>前往 GitHub 專案頁面</li>
+                    <li>點擊右上方的 <code>Code</code> 按鈕</li>
+                    <li>選擇 <code>Download ZIP</code></li>
+                    <li>解壓縮到你想要的資料夾</li>
+                </ol>
+                <div class="box success">
+                    <strong>完成後，</strong>你會看到 <code>app.py</code>、<code>requirements.txt</code>、<code>templates/</code> 等檔案和資料夾。
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4: 建立虛擬環境 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🔧 步驟二：建立虛擬環境</h2>
+                <p>虛擬環境讓專案的套件獨立管理，不影響系統其他 Python 專案。</p>
+
+                <h3>Windows 使用者</h3>
+                <pre># 方法一：雙擊執行 setup_venv.bat
+
+# 方法二：手動執行
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt</pre>
+
+                <h3>macOS / Linux 使用者</h3>
+                <pre># 方法一：執行 setup_venv.sh
+
+# 方法二：手動執行
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt</pre>
+            </div>
+        </div>
+
+        <!-- Slide 5: 啟動應用程式 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🚀 步驟三：啟動應用程式</h2>
+
+                <h3>Windows 使用者</h3>
+                <pre># 雙擊執行 start.bat
+# 或手動執行：
+venv\Scripts\activate
+python app.py</pre>
+
+                <h3>macOS / Linux 使用者</h3>
+                <pre># 執行 start.sh
+# 或手動執行：
+source venv/bin/activate
+python app.py</pre>
+
+                <div class="box info">
+                    <strong>啟動成功後，</strong>終端機會顯示：<br>
+                    <code>Running on http://0.0.0.0:8806</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6: 啟動成功畫面 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>✅ 啟動成功！</h2>
+                <p>當你看到以下畫面，表示 Flask 伺服器已經準備就緒：</p>
+                <img src="images/ch8_01_flask_startup.png" alt="Flask 啟動成功畫面" class="slide-img">
+                <div class="box success">
+                    <strong>下一步：</strong>打開瀏覽器，輸入 <code>http://localhost:8806</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7: 主介面預覽 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>🖥️ 生成器主介面</h2>
+                <p>成功開啟後，你會看到這個設計簡潔的設定表單：</p>
+                <img src="images/ch8_02_generator_homepage.png" alt="生成器主頁面" class="slide-img">
+                <p style="text-align: center; color: #666;">這就是 LINE Bot 智慧客服生成器的主介面！</p>
+            </div>
+        </div>
+
+        <!-- Slide 8: 專案結構說明 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📁 專案結構說明</h2>
+                <pre style="font-size: 16px;">CH8-LINE-Bot-Generator/
+├── app.py                    # Flask 主程式
+├── requirements.txt          # Python 套件需求
+├── setup_venv.bat / .sh      # 環境建置腳本
+├── start.bat / .sh           # 啟動腳本
+│
+├── templates/
+│   └── index.html            # 主頁面 HTML
+│
+├── static/
+│   ├── css/style.css         # 樣式檔案
+│   ├── js/script.js          # JavaScript 邏輯
+│   └── sample.gs             # GAS 範例檔案
+│
+└── slides/                   # 簡報檔案
+    └── ...</pre>
+            </div>
+        </div>
+
+        <!-- Slide 9: 常見問題 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>❓ 常見問題排解</h2>
+                <div class="concept-grid">
+                    <div class="concept-card">
+                        <h3>找不到 python 命令？</h3>
+                        <p>確認 Python 已加入系統 PATH。重新安裝時勾選「Add Python to PATH」。</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>pip install 失敗？</h3>
+                        <p>試著升級 pip：<br><code>python -m pip install --upgrade pip</code></p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>Port 8806 被佔用？</h3>
+                        <p>關閉其他使用此 port 的程式，或修改 app.py 中的 port 設定。</p>
+                    </div>
+                    <div class="concept-card">
+                        <h3>瀏覽器打不開？</h3>
+                        <p>試試 <code>http://127.0.0.1:8806</code>，或檢查防火牆設定。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10: 總結 -->
+        <div class="slide">
+            <div class="content-card">
+                <h2>📋 Part 2 總結</h2>
+                <div class="box success">
+                    <h3>本單元完成的步驟：</h3>
+                    <ol style="margin-left: 20px; margin-top: 15px;">
+                        <li><span class="step-number">1</span>下載專案檔案（Git Clone 或 ZIP）</li>
+                        <li><span class="step-number">2</span>建立 Python 虛擬環境</li>
+                        <li><span class="step-number">3</span>安裝必要套件（Flask）</li>
+                        <li><span class="step-number">4</span>啟動 Flask 應用程式</li>
+                        <li><span class="step-number">5</span>在瀏覽器開啟生成器介面</li>
+                    </ol>
+                </div>
+                <div style="text-align: center; margin-top: 40px; display: flex; justify-content: center; gap: 20px;">
+                    <a href="part1.html" class="nav-btn" style="background: #6c757d; padding: 15px 40px; font-size: 18px;">
+                        ← Part 1
+                    </a>
+                    <a href="part3.html" class="nav-btn" style="background: #28a745; padding: 15px 40px; font-size: 18px;">
+                        前往 Part 3：基本設定與 AI 服務 →
+                    </a>
+                </div>
+                <p class="footer-text">© 2026 自己架設 AI - 零基礎到大師 | Made with 曾慶良(阿亮老師) ❤️</p>
+            </div>
+        </div>
+
+    </div>
+
+    <button class="nav-arrow prev-arrow" id="prevBtn" onclick="changeSlide(-1)">❮</button>
+    <button class="nav-arrow next-arrow" id="nextBtn" onclick="changeSlide(1)">❯</button>
+    <div class="indicators" id="indicatorContainer"></div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        function init() { createIndicators(); showSlide(0); updateButtons(); document.addEventListener('keydown', handleKeydown); }
+        function handleKeydown(e) { if (e.key === 'ArrowLeft') changeSlide(-1); if (e.key === 'ArrowRight') changeSlide(1); }
+        function createIndicators() { const container = document.getElementById('indicatorContainer'); container.innerHTML = ''; slides.forEach((_, index) => { const dot = document.createElement('div'); dot.className = 'dot'; dot.onclick = () => goToSlide(index); container.appendChild(dot); }); }
+        function showSlide(index) { if (index < 0) index = 0; if (index >= totalSlides) index = totalSlides - 1; slides.forEach(slide => slide.classList.remove('active')); slides[index].classList.add('active'); currentSlide = index; const dots = document.querySelectorAll('.dot'); dots.forEach((dot, idx) => { dot.classList.toggle('active', idx === index); }); updateButtons(); }
+        function changeSlide(direction) { showSlide(currentSlide + direction); }
+        function goToSlide(index) { showSlide(index); }
+        function updateButtons() { document.getElementById('prevBtn').disabled = currentSlide === 0; document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1; }
+        function toggleFullscreen() { if (!document.fullscreenElement) { document.documentElement.requestFullscreen(); } else { if (document.exitFullscreen) { document.exitFullscreen(); } } }
+        init();
+    </script>
+</body>
+</html>
