@@ -10,7 +10,7 @@
 
 ## 📊 完整簡報連結
 
-👉 **[點擊查看本章完整簡報](https://chatgpt3a01.github.io/CH8-LINE-Bot-Generator/slides/index.html)**
+👉 **[點擊查看本章完整簡報](https://chatgpt3a01.github.io/LINE-Bot-Generator/slides/index.html)**
 
 ---
 
@@ -44,8 +44,8 @@
 ### 方法一：使用 Git Clone（推薦）
 
 ```bash
-git clone https://github.com/ChatGPT3a01/CH8-LINE-Bot-Generator.git
-cd CH8-LINE-Bot-Generator
+git clone https://github.com/ChatGPT3a01/LINE-Bot-Generator.git
+cd LINE-Bot-Generator
 ```
 
 ### 方法二：下載 ZIP 檔案
@@ -201,7 +201,7 @@ http://localhost:8806
 ## 🗂️ 專案結構
 
 ```
-CH8-LINE-Bot-Generator/
+LINE-Bot-Generator/
 │
 ├── app.py                    # Flask 主程式
 ├── requirements.txt          # Python 套件需求
