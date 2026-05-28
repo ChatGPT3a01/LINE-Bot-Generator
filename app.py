@@ -33,11 +33,11 @@ def generate_gas():
 
         # Gemini 設定
         gemini_api_key = data.get('gemini_api_key', '')
-        gemini_model = data.get('gemini_model', 'gemini-2.5-flash')
+        gemini_model = data.get('gemini_model', 'gemini-3.5-flash')
 
         # OpenAI 設定
         openai_api_key = data.get('openai_api_key', '')
-        openai_model = data.get('openai_model', 'gpt-4o')
+        openai_model = data.get('openai_model', 'gpt-5.5')
 
         # AI 回應風格設定
         ai_tone = data.get('ai_tone', '友善、自然')

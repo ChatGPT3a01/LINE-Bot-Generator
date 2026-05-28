@@ -86,7 +86,7 @@ function getKnowledgeBase() {
  */
 function getAiResponse(userInput, context) {
   // ** 使用最新的 Gemini 2.5 Flash 模型 **
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   // 建立提示 (Prompt)，結合知識庫和使用者問題
   const prompt = `${context}\n---\n\n請用友善、自然的語氣回答以下問題：\n\n【回答規則】\n1. 如果知識庫中有相關資訊，請優先使用知識庫內容回答\n2. 如果知識庫中完全沒有相關內容，請先說「目前知識庫無相關資料，不過...」，然後根據你的一般知識盡力回答\n3. 絕對不要說「我無法回答」或「這個問題我無法回答」\n4. 請保持友善且樂於助人的態度\n\n使用者問題：「${userInput}」`;
