@@ -85,7 +85,7 @@ function getKnowledgeBase() {
  * @returns {string} AI 生成的回覆
  */
 function getAiResponse(userInput, context) {
-  // ** 使用最新的 Gemini 2.5 Flash 模型 **
+  // ** 使用最新的 Gemini 3.5 Flash 模型 **
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
   // 建立提示 (Prompt)，結合知識庫和使用者問題

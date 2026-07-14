@@ -37,7 +37,7 @@ def generate_gas():
 
         # OpenAI 設定
         openai_api_key = data.get('openai_api_key', '')
-        openai_model = data.get('openai_model', 'gpt-5.5')
+        openai_model = data.get('openai_model', 'gpt-5.6-terra')
 
         # AI 回應風格設定
         ai_tone = data.get('ai_tone', '友善、自然')
